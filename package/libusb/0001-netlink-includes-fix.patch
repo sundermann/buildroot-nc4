@@ -1,8 +1,8 @@
 diff -rbu a/configure.ac b/configure.ac
 --- a/configure.ac	2020-12-10 04:53:11.000000000 +0100
 +++ b/configure.ac	2022-09-02 16:39:04.210025308 +0200
-@@ -180,7 +180,7 @@
- 		AC_CHECK_LIB([udev], [udev_new], [], [AC_MSG_ERROR([udev support requested but libudev not installed])])
+@@ -220,7 +220,7 @@
+ 		], [])
  	else
  		AC_CHECK_HEADERS([asm/types.h])
 -		AC_CHECK_HEADER([linux/netlink.h], [], [AC_MSG_ERROR([Linux netlink header not found])])
