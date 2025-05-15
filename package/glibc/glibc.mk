@@ -18,7 +18,7 @@ else
 #   git describe --match 'glibc-*' --abbrev=40 origin/release/MAJOR.MINOR/master | cut -d '-' -f 2-
 # When updating the version, please also update localedef
 #GLIBC_VERSION = 2.35-134-gb6aade18a7e5719c942aa2da6cf3157aca993fa4
-GLIBC_VERSION = cc0e3d68d499414502400a589007225f03b22437
+GLIBC_VERSION = glibc-2.24
 
 # Upstream doesn't officially provide an https download link.
 # There is one (https://sourceware.org/git/glibc.git) but it's not reliable,
@@ -26,10 +26,10 @@ GLIBC_VERSION = cc0e3d68d499414502400a589007225f03b22437
 # When updating the version, check it on the official repository;
 # *NEVER* decide on a version string by looking at the mirror.
 # Then check that the mirror has been synced already (happens once a day.)
-GLIBC_SITE = $(call github,openlgtv,glibc,$(GLIBC_VERSION))
+GLIBC_SITE = $(call github,bminor,glibc,$(GLIBC_VERSION))
 endif
 
-#BR_NO_CHECK_HASH_FOR += $(GLIBC_SOURCE)
+BR_NO_CHECK_HASH_FOR += $(GLIBC_SOURCE)
 
 GLIBC_LICENSE = GPL-2.0+ (programs), LGPL-2.1+, BSD-3-Clause, MIT (library)
 GLIBC_LICENSE_FILES = COPYING COPYING.LIB LICENSES
@@ -107,12 +107,6 @@ GLIBC_CONF_ENV = \
 	libc_cv_c_cleanup=yes \
 	libc_cv_ssp=no
 
-# Don't use webOS compatibility hacks
-ifeq ($(BR2_PACKAGE_LGTV),y)
-# Ugly hack to modify CC (because CFLAGS isn't used everywhere we need)
-GLIBC_CONF_ENV += CC="$(TARGET_CC) -tno-lgtv-compat"
-endif
-
 # POSIX shell does not support localization, so remove the corresponding
 # syntax from ldd if bash is not selected.
 ifeq ($(BR2_PACKAGE_BASH),)
@@ -186,7 +180,6 @@ define GLIBC_CONFIGURE_CMDS
 		--without-gd \
 		--enable-obsolete-rpc \
 		--with-headers=$(STAGING_DIR)/usr/include \
-		--enable-add-ons=nptl,ports \
 		$(GLIBC_CONF_OPTS))
 	$(GLIBC_ADD_MISSING_STUB_H)
 endef
