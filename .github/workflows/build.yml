@@ -76,20 +76,17 @@ jobs:
           BR2_CCACHE_DIR: ${{ runner.temp }}/${{ matrix.config.BR2_CCACHE_DIR }}
 
       - name: Rename SDK artifact
-        run: |
-          for file in output/images/*_sdk-buildroot.tar.gz; do
-            mv "$file" "${file/_sdk-buildroot.tar.gz/_sdk-${{ matrix.host_arch }}-buildroot.tar.gz}"
-          done
+        run: mv output/images/arm-${{ matrix.config.TOOLCHAIN_TARGET }}-linux-gnueabi_sdk-buildroot.tar.gz output/images/arm-${{ matrix.config.TOOLCHAIN_TARGET }}-linux-gnueabi_sdk-buildroot-${{ matrix.host_arch }}.tar.gz
 
       - name: Upload SDK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.config.TOOLCHAIN_TARGET }}-sdk-${{ matrix.host_arch }}-buildroot
-          path: output/images/*_sdk-${{ matrix.host_arch }}-buildroot.tar.gz
+          name: arm-${{ matrix.config.TOOLCHAIN_TARGET }}-linux-gnueabi_sdk-buildroot-${{ matrix.host_arch }}
+          path: output/images/*_sdk-buildroot*.tar.gz
 
       - name: Release
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
         with:
           files: |
-            output/images/*_sdk-${{ matrix.host_arch }}-buildroot.tar.gz
+            output/images/*_sdk-buildroot*.tar.gz
