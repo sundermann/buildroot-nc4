@@ -2956,6 +2956,7 @@ menu "WebOS"
 	source "package/pmloglib/Config.in"
 	source "package/umediaserver/Config.in"
 	source "package/webos/Config.in"
+	source "package/webos-userland/Config.in"
 endmenu
 
 endmenu
