@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-PHP_VERSION = 8.3.19
+PHP_VERSION = 8.4.7
 PHP_SITE = https://www.php.net/distributions
 PHP_SOURCE = php-$(PHP_VERSION).tar.xz
 PHP_INSTALL_STAGING = YES
@@ -100,6 +100,14 @@ endif
 PHP_CONF_OPTS += $(if $(BR2_PACKAGE_PHP_SAPI_CLI),--enable-cli,--disable-cli)
 PHP_CONF_OPTS += $(if $(BR2_PACKAGE_PHP_SAPI_CGI),--enable-cgi,--disable-cgi)
 PHP_CONF_OPTS += $(if $(BR2_PACKAGE_PHP_SAPI_FPM),--enable-fpm,--disable-fpm)
+ifeq ($(BR2_PACKAGE_PHP_SAPI_EMBED),y)
+ifeq ($(BR2_PACKAGE_PHP_SAPI_EMBED_STATIC),y)
+PHP_CFLAGS += -ffunction-sections -fdata-sections
+PHP_CONF_OPTS += --enable-embed=static --with-pic
+else
+PHP_CONF_OPTS += --enable-embed=shared
+endif
+endif
 
 ifeq ($(BR2_PACKAGE_PHP_SAPI_APACHE),y)
 PHP_DEPENDENCIES += apache
@@ -137,6 +145,19 @@ PHP_CONF_OPTS += \
 	$(if $(BR2_PACKAGE_PHP_EXT_FILEINFO),--enable-fileinfo) \
 	$(if $(BR2_PACKAGE_PHP_EXT_BCMATH),--enable-bcmath) \
 	$(if $(BR2_PACKAGE_PHP_EXT_PHAR),--enable-phar)
+
+ifeq ($(BR2_PACKAGE_PHP_EXT_OPENSWOOLE),y)
+define PHP_OPENSWOOLE_UNPACK
+	mkdir -p $(@D)/ext/openswoole
+	$(TAR) -xf $(PHP_DL_DIR)/v4.12.1.tar.gz -C $(@D)/ext/openswoole --strip-components=1
+endef
+
+# FIXME: $(call github) does not work here
+# FIXME: this duplicates package php-openswoole
+PHP_EXTRA_DOWNLOADS += https://github.com/openswoole/swoole-src/archive/refs/tags/v4.12.1.tar.gz
+PHP_CONF_OPTS += --enable-openswoole
+PHP_POST_EXTRACT_HOOKS += PHP_OPENSWOOLE_UNPACK
+endif
 
 ifeq ($(BR2_PACKAGE_PHP_EXT_LIBARGON2),y)
 PHP_CONF_OPTS += --with-password-argon2=$(STAGING_DIR)/usr
