@@ -4,10 +4,21 @@
 #
 ################################################################################
 
+ifeq ($(BR2_arc),y)
+GLIBC_VERSION =  arc-2020.03-release
+GLIBC_SITE = $(call github,foss-for-synopsys-dwc-arc-processors,glibc,$(GLIBC_VERSION))
+else ifeq ($(BR2_RISCV_32),y)
+GLIBC_VERSION = 06983fe52cfe8e4779035c27e8cc5d2caab31531
+GLIBC_SITE = $(call github,riscv,riscv-glibc,$(GLIBC_VERSION))
+else ifeq ($(BR2_csky),y)
+GLIBC_VERSION = 7630ed2fa60caea98f500e4a7a51b88f9bf1e176
+GLIBC_SITE = $(call github,c-sky,glibc,$(GLIBC_VERSION))
+else
 # Generate version string using:
 #   git describe --match 'glibc-*' --abbrev=40 origin/release/MAJOR.MINOR/master | cut -d '-' -f 2-
 # When updating the version, please also update localedef
-GLIBC_VERSION = 2.41-5-gcb7f20653724029be89224ed3a35d627cc5b4163
+#GLIBC_VERSION = 2.35-134-gb6aade18a7e5719c942aa2da6cf3157aca993fa4
+GLIBC_VERSION = fe819f0414e6385206dc8682c20d681ee0eb5998
 
 # Upstream doesn't officially provide an https download link.
 # There is one (https://sourceware.org/git/glibc.git) but it's not reliable,
@@ -15,11 +26,13 @@ GLIBC_VERSION = 2.41-5-gcb7f20653724029be89224ed3a35d627cc5b4163
 # When updating the version, check it on the official repository;
 # *NEVER* decide on a version string by looking at the mirror.
 # Then check that the mirror has been synced already (happens once a day.)
-GLIBC_SITE = $(call github,bminor,glibc,$(GLIBC_VERSION))
+GLIBC_SITE = $(call github,openlgtv,glibc,$(GLIBC_VERSION))
+endif
+
+#BR_NO_CHECK_HASH_FOR += $(GLIBC_SOURCE)
 
 GLIBC_LICENSE = GPL-2.0+ (programs), LGPL-2.1+, BSD-3-Clause, MIT (library)
 GLIBC_LICENSE_FILES = COPYING COPYING.LIB LICENSES
-GLIBC_CPE_ID_VENDOR = gnu
 
 # Extract the base version (e.g. 2.38) from GLIBC_VERSION in order to
 # allow proper matching with the CPE database.
@@ -91,7 +104,14 @@ endif
 GLIBC_CONF_ENV = \
 	ac_cv_path_BASH_SHELL=/bin/$(if $(BR2_PACKAGE_BASH),bash,sh) \
 	libc_cv_forced_unwind=yes \
+	libc_cv_c_cleanup=yes \
 	libc_cv_ssp=no
+
+# Don't use webOS compatibility hacks
+ifeq ($(BR2_PACKAGE_LGTV),y)
+# Ugly hack to modify CC (because CFLAGS isn't used everywhere we need)
+GLIBC_CONF_ENV += CC="$(TARGET_CC) -tno-lgtv-compat"
+endif
 
 # POSIX shell does not support localization, so remove the corresponding
 # syntax from ldd if bash is not selected.
@@ -143,6 +163,8 @@ ifeq ($(BR2_OPTIMIZE_FAST),y)
 GLIBC_CFLAGS += -O2
 endif
 
+GLIBC_CFLAGS = -O2
+
 define GLIBC_CONFIGURE_CMDS
 	mkdir -p $(@D)/build
 	# Do the configuration
@@ -162,8 +184,9 @@ define GLIBC_CONFIGURE_CMDS
 		--disable-profile \
 		--disable-werror \
 		--without-gd \
+		--enable-obsolete-rpc \
 		--with-headers=$(STAGING_DIR)/usr/include \
-		$(if $(BR2_aarch64)$(BR2_aarch64_be),--enable-mathvec) \
+		--enable-add-ons=nptl,ports \
 		$(GLIBC_CONF_OPTS))
 	$(GLIBC_ADD_MISSING_STUB_H)
 endef
