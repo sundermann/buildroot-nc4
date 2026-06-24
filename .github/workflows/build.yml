@@ -1,0 +1,88 @@
+name: Build
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  FORCE_UNSAFE_CONFIGURE: 1
+
+jobs:
+  build_sdk:
+    name: Build ${{ matrix.config.name }} SDK for ${{ matrix.os }}
+    runs-on: ${{ matrix.runs-on }}
+    container:
+      image: gcc:12.5-bookworm
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ linux-intel, linux-arm ]
+        include:
+          - os: linux-intel
+            runs-on: ubuntu-latest
+            host_arch: x86_64
+          - os: linux-arm
+            runs-on: ubuntu-24.04-arm
+            host_arch: aarch64
+        config:
+          - name: WebOS config
+            TOOLCHAIN_TARGET: webos
+            DEFCONFIG: webos_tv_defconfig
+          - name: LGTV config
+            TOOLCHAIN_TARGET: lgtv
+            DEFCONFIG: lgtv_defconfig
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Prepare environment
+        run: |
+          apt-get update -qq
+          apt-get install -y cpio rsync bc libssl-dev
+          mkdir -p "${RUNNER_TEMP}/buildroot-ccache" "${RUNNER_TEMP}/buildroot-dl"
+
+      - name: Cache downloads
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/buildroot-dl
+          key: ${{ matrix.config.TOOLCHAIN_TARGET }}-dl-${{ github.run_id }}
+          restore-keys: |
+            ${{ matrix.config.TOOLCHAIN_TARGET }}-dl
+
+      - name: Cache ccache
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/buildroot-ccache
+          key: ${{ matrix.host_arch }}-${{ matrix.config.TOOLCHAIN_TARGET }}-ccache-${{ github.run_id }}
+          restore-keys: |
+            ${{ matrix.host_arch }}-${{ matrix.config.TOOLCHAIN_TARGET }}-ccache
+
+      - name: Configure Buildroot
+        run: make ${{ matrix.config.DEFCONFIG }}
+
+      - name: Build SDK
+        run: make sdk
+        env:
+          BR2_CCACHE_DIR: ${{ runner.temp }}/buildroot-ccache
+          BR2_DL_DIR: ${{ runner.temp }}/buildroot-dl
+
+      - name: Rename SDK artifact
+        run: mv output/images/arm-${{ matrix.config.TOOLCHAIN_TARGET }}-linux-gnueabi_sdk-buildroot.tar.gz output/images/arm-${{ matrix.config.TOOLCHAIN_TARGET }}-linux-gnueabi_sdk-buildroot-${{ matrix.host_arch }}.tar.gz
+
+      - name: Upload SDK Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: arm-${{ matrix.config.TOOLCHAIN_TARGET }}-linux-gnueabi_sdk-buildroot-${{ matrix.host_arch }}
+          path: output/images/*_sdk-buildroot*.tar.gz
+
+      - name: Release
+        uses: softprops/action-gh-release@v3
+        if: github.ref_type == 'tag'
+        with:
+          files: |
+            output/images/*_sdk-buildroot*.tar.gz
