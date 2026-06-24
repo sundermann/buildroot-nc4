@@ -122,6 +122,12 @@ else
 NCURSES_CONF_OPTS += --disable-widec
 endif # BR2_PACKAGE_NCURSES_WCHAR
 
+ifeq ($(BR2_PACKAGE_LGTV),y)
+# webOS has libtinfo and ABI version 5
+NCURSES_CONF_OPTS += --with-termlib=tinfo --with-abi-version=5
+NCURSES_CONFIG_SCRIPTS = ncurses$(NCURSES_LIB_SUFFIX)5-config
+endif
+
 ifneq ($(BR2_ENABLE_DEBUG),y)
 NCURSES_CONF_OPTS += --without-debug
 endif
