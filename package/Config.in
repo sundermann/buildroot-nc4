@@ -2940,4 +2940,12 @@ menu "Text editors and viewers"
 	source "package/vim/Config.in"
 endmenu
 
+menu "LGTV"
+	source "package/lgtv/Config.in"
+endmenu
+
+menu "WebOS"
+	source "package/webos/Config.in"
+endmenu
+
 endmenu
