@@ -460,6 +460,13 @@ endif
 # Used by our binutils patches.
 export BR_COMPILER_PARANOID_UNSAFE_PATH=enabled
 
+# Create a set of compiler flags without TARGET_DEBUGGING and TARGET_OPTIMIZATION for toolchain
+$(foreach flag,CFLAGS CXXFLAGS FCFLAGS LDFLAGS CONFIGURE_OPTS,	\
+	$(eval TOOLCHAIN_TARGET_$(flag) := $(strip					\
+		$(subst $(TARGET_DEBUGGING),,							\
+			$(subst $(TARGET_OPTIMIZATION),,					\
+				$(TARGET_$(flag)))))))
+
 include package/pkg-download.mk
 include package/pkg-autotools.mk
 include package/pkg-cmake.mk
