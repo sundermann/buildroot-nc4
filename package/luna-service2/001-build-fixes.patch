@@ -1,0 +1,30 @@
+diff -rub a/src/ls-hubd/CMakeLists.txt b/src/ls-hubd/CMakeLists.txt
+--- a/src/ls-hubd/CMakeLists.txt	2021-11-09 14:32:09.000000000 +0100
++++ b/src/ls-hubd/CMakeLists.txt	2022-01-10 22:04:29.641297836 +0100
+@@ -58,8 +58,12 @@
+     add_definitions(-DLS_VALIDATE_CONF)
+ endif()
+ 
++find_library(SYSTEMD_LIBRARY systemd)
++if(SYSTEMD_LIBRARY)
++	target_link_libraries(${PROJECT_NAME} ${SYSTEMD_LIBRARY})
++endif()
++
+ set(LIBRARIES
+-    -lsystemd
+     luna-service2
+     luna-service2++
+     ${PMLOGLIB_LIBRARIES}
+diff -rub a/src/ls-hubd/hub.cpp b/src/ls-hubd/hub.cpp
+--- a/src/ls-hubd/hub.cpp	2021-11-09 14:32:09.000000000 +0100
++++ b/src/ls-hubd/hub.cpp	2022-01-10 22:04:29.641297836 +0100
+@@ -55,7 +55,9 @@
+ 
+ #include <fstream>
+ #include <iostream>
++#if !defined(BUILD_FOR_DESKTOP)
+ #include <systemd/sd-daemon.h>
++#endif
+ #include <utility>
+ 
+ template <typename Arg, typename... Args>
