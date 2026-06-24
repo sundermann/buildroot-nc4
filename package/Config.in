@@ -2943,6 +2943,7 @@ endmenu
 menu "WebOS"
 	source "package/cmake-modules-webos/Config.in"
 	source "package/hyperion-webos/Config.in"
+	source "package/libpbnjson/Config.in"
 	source "package/webos/Config.in"
 endmenu
 
