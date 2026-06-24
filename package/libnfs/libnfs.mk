@@ -23,6 +23,10 @@ else
 LIBNFS_CONF_OPTS += --without-libkrb5
 endif
 
+ifeq ($(BR2_PACKAGE_WEBOS),y)
+LIBNFS_CONF_ENV += LDFLAGS="$(TARGET_LDFLAGS) -lrt"
+endif
+
 ifeq ($(BR2_PACKAGE_LIBTIRPC),y)
 LIBNFS_DEPENDENCIES += libtirpc
 endif
