@@ -7,13 +7,20 @@
 # Generate version string using:
 #   git describe --match 'glibc-*' --abbrev=40 origin/release/MAJOR.MINOR/master | cut -d '-' -f 2-
 # When updating the version, please also update localedef
-GLIBC_VERSION = 2.43-27-g4070d808bea1c077eb7e7d52b52b91cae98205d5
-GLIBC_SITE = https://sourceware.org/git/glibc.git
-GLIBC_SITE_METHOD = git
+GLIBC_VERSION = fe819f0414e6385206dc8682c20d681ee0eb5998
+
+# Upstream doesn't officially provide an https download link.
+# There is one (https://sourceware.org/git/glibc.git) but it's not reliable,
+# sometimes the connection times out. So use an unofficial github mirror.
+# When updating the version, check it on the official repository;
+# *NEVER* decide on a version string by looking at the mirror.
+# Then check that the mirror has been synced already (happens once a day.)
+GLIBC_SITE = $(call github,openlgtv,glibc,$(GLIBC_VERSION))
+
+#BR_NO_CHECK_HASH_FOR += $(GLIBC_SOURCE)
 
 GLIBC_LICENSE = GPL-2.0+ (programs), LGPL-2.1+, BSD-3-Clause, MIT (library)
-GLIBC_LICENSE_FILES = COPYINGv2 COPYING.LESSERv2 LICENSES
-GLIBC_CPE_ID_VENDOR = gnu
+GLIBC_LICENSE_FILES = COPYING COPYING.LIB LICENSES
 
 # Extract the base version (e.g. 2.38) from GLIBC_VERSION in order to
 # allow proper matching with the CPE database.
@@ -63,6 +70,8 @@ GLIBC_SUBDIR = build
 
 GLIBC_INSTALL_STAGING = YES
 
+GLIBC_INSTALL_STAGING_OPTS = install_root=$(STAGING_DIR) install
+
 # Thumb build is broken, build in ARM mode
 ifeq ($(BR2_ARM_INSTRUCTIONS_THUMB),y)
 GLIBC_EXTRA_CFLAGS += -marm
@@ -101,7 +110,14 @@ endif
 GLIBC_CONF_ENV = \
 	ac_cv_path_BASH_SHELL=/bin/$(if $(BR2_PACKAGE_BASH),bash,sh) \
 	libc_cv_forced_unwind=yes \
+	libc_cv_c_cleanup=yes \
 	libc_cv_ssp=no
+
+# Don't use webOS compatibility hacks
+ifeq ($(BR2_PACKAGE_LGTV),y)
+# Ugly hack to modify CC (because CFLAGS isn't used everywhere we need)
+GLIBC_CONF_ENV += CC="$(TARGET_CC) -tno-lgtv-compat"
+endif
 
 # POSIX shell does not support localization, so remove the corresponding
 # syntax from ldd if bash is not selected.
@@ -153,6 +169,8 @@ ifeq ($(BR2_OPTIMIZE_FAST),y)
 GLIBC_CFLAGS += -O2
 endif
 
+GLIBC_CFLAGS = -O2
+
 define GLIBC_CONFIGURE_CMDS
 	mkdir -p $(@D)/build
 	# Do the configuration
@@ -172,8 +190,9 @@ define GLIBC_CONFIGURE_CMDS
 		--disable-profile \
 		--disable-werror \
 		--without-gd \
+		--enable-obsolete-rpc \
 		--with-headers=$(STAGING_DIR)/usr/include \
-		$(if $(BR2_aarch64)$(BR2_aarch64_be),--enable-mathvec) \
+		--enable-add-ons=nptl,ports \
 		$(GLIBC_CONF_OPTS))
 	$(GLIBC_ADD_MISSING_STUB_H)
 endef
