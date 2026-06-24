@@ -2949,6 +2949,7 @@ menu "WebOS"
 	source "package/umediaserver/Config.in"
 	source "package/webos/Config.in"
 	source "package/webos-userland/Config.in"
+	source "package/webos-wayland-extensions/Config.in"
 endmenu
 
 endmenu
